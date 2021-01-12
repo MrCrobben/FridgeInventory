@@ -38,7 +38,7 @@ public class MainActivity extends AppCompatActivity {
         btnScan.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                new IntentIntegrator(MainActivity.this).setBeepEnabled(true).initiateScan(); // `this` is the current Activity
+                new IntentIntegrator(MainActivity.this).setBeepEnabled(true).setOrientationLocked(true).initiateScan(); // `this` is the current Activity
 
 
             }
