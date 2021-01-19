@@ -54,9 +54,17 @@ public class MainActivity extends AppCompatActivity {
             } else {
                 Toast.makeText(this, "Scanned: " + result.getContents(), Toast.LENGTH_LONG).show();
                 textView.setText(result.getContents());
+                //startActivity(new Intent(MainActivity.this,ProductInfo.class).putExtra("barcode",result.getContents()));
+
             }
         } else {
             super.onActivityResult(requestCode, resultCode, data);
         }
+    }
+
+    protected void startActivityWithData(String barcode,Class<ProductInfo> productInfoClass){
+        Intent i = new Intent(MainActivity.this,productInfoClass);
+        i.putExtra("barcode",barcode);
+        startActivity(i);
     }
 }
