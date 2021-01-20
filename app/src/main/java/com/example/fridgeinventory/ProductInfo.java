@@ -9,6 +9,7 @@ import android.os.Bundle;
 import android.widget.ImageView;
 import android.widget.TextView;
 
+import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -32,22 +33,30 @@ public class ProductInfo extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_productinfo);
-        Bundle extra = getIntent().getExtras();
+        Bundle extra = getIntent().getExtras();     
         String barcode = extra.getString("barcode");
         String uri = "https://world.openfoodfacts.org/api/v0/product/" + barcode + ".json";
         new JsonTask().execute(uri);
 
         //productImg = findViewById(R.id.productImg);
         txtName = findViewById(R.id.txtName);
-        String name=null;
-        try {
-            JSONObject primObj = obj.getJSONObject("product");
-            name=primObj.getString("product_name");
+        String name="";
+        int i;
+        JSONArray arr=null;
+        //TO DO
+        /*try{
+            //arr=obj.getJSONArray("product");
+            JSONObject js = new JSONObject(obj.toString());
+            js.isNull("product");
         }catch (JSONException e){
             e.printStackTrace();
+            txtName.setText("Otislo");
+        }catch (Exception e){
+            e.printStackTrace();
+           // txtName.setText("Kurcina");
         }
-        txtName.setText(name);
 
+         */
     }
 
     @SuppressLint("StaticFieldLeak")
@@ -104,13 +113,14 @@ public class ProductInfo extends AppCompatActivity {
         }
         @Override
         protected void onPostExecute(String result){
-
+            //txtName.setText(result);
             super.onPostExecute(result);
             if(pd.isShowing()){
                 pd.dismiss();
             }
             try{
                 obj= new JSONObject(result);
+
             }catch(JSONException e){
                 e.printStackTrace();
             }
