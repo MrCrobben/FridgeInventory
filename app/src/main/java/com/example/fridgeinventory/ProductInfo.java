@@ -9,6 +9,10 @@ import android.os.Bundle;
 import android.widget.ImageView;
 import android.widget.TextView;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -25,7 +29,8 @@ public class ProductInfo extends AppCompatActivity {
 
 
     ProgressDialog pd;
-    JSONObject obj;
+    JsonNode jsonNode;
+    ObjectMapper mapper = new ObjectMapper();
     //ImageView productImg;
     TextView txtName;
 
@@ -38,25 +43,6 @@ public class ProductInfo extends AppCompatActivity {
         String uri = "https://world.openfoodfacts.org/api/v0/product/" + barcode + ".json";
         new JsonTask().execute(uri);
 
-        //productImg = findViewById(R.id.productImg);
-        txtName = findViewById(R.id.txtName);
-        String name="";
-        int i;
-        JSONArray arr=null;
-        //TO DO
-        /*try{
-            //arr=obj.getJSONArray("product");
-            JSONObject js = new JSONObject(obj.toString());
-            js.isNull("product");
-        }catch (JSONException e){
-            e.printStackTrace();
-            txtName.setText("Otislo");
-        }catch (Exception e){
-            e.printStackTrace();
-           // txtName.setText("Kurcina");
-        }
-
-         */
     }
 
     @SuppressLint("StaticFieldLeak")
@@ -113,16 +99,18 @@ public class ProductInfo extends AppCompatActivity {
         }
         @Override
         protected void onPostExecute(String result){
-            //txtName.setText(result);
             super.onPostExecute(result);
             if(pd.isShowing()){
                 pd.dismiss();
             }
-            try{
-                obj= new JSONObject(result);
-
-            }catch(JSONException e){
+            try {
+                jsonNode = mapper.readTree(result);
+                txtName = findViewById(R.id.txtName);
+                txtName.setText(jsonNode.findValue("product_name").asText());
+            } catch (JsonProcessingException e) {
                 e.printStackTrace();
+            }catch(Exception e){
+                txtName.setText(String.valueOf(result ==null));
             }
         }
     }
