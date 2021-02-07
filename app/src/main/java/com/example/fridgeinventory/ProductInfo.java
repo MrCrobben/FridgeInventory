@@ -1,9 +1,14 @@
 package com.example.fridgeinventory;
 
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 
 import android.annotation.SuppressLint;
 import android.app.ProgressDialog;
+import android.content.DialogInterface;
+import android.content.Intent;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.widget.ImageView;
@@ -18,20 +23,23 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.BufferedReader;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Set;
 
 public class ProductInfo extends AppCompatActivity {
 
 
     ProgressDialog pd;
-    JsonNode jsonNode;
     ObjectMapper mapper = new ObjectMapper();
-    //ImageView productImg;
+    ImageView productImg;
     TextView txtName;
 
     @Override
@@ -44,9 +52,27 @@ public class ProductInfo extends AppCompatActivity {
         new JsonTask().execute(uri);
 
     }
+    private class PictureTask extends AsyncTask<String, String, Bitmap>{
+        Bitmap pic =null;
+        public Bitmap getPic(){
+            return pic;
+        }
+        @Override
+        protected Bitmap doInBackground(String... strings) {
 
+            InputStream is1 = getInputStreamFromUrl(strings[0]);
+            pic = BitmapFactory.decodeStream(is1);
+            return pic;
+        }
+
+        @Override
+        protected void onPostExecute(Bitmap bitmap) {
+            super.onPostExecute(bitmap);
+            pic = bitmap;
+        }
+    }
     @SuppressLint("StaticFieldLeak")
-    private class JsonTask extends AsyncTask<String, String, String> {
+    private class JsonTask extends AsyncTask<String, String, Product > {
         private JsonTask(){
             super();
         }
@@ -58,60 +84,131 @@ public class ProductInfo extends AppCompatActivity {
             pd.show();
         }
         @Override
-        protected String doInBackground(String... strings) {
-            HttpURLConnection  connection= null;
-            BufferedReader reader = null;
-
-            try{
-                URL url = new URL(strings[0]);
-                connection = (HttpURLConnection) url.openConnection();
-                connection.addRequestProperty("User-agent","Android");
-                connection.addRequestProperty("Version","Version: 0.1");
-                connection.addRequestProperty("FridgeInventory","https://github.com/MrCrobben/FridgeInventory");
-                connection.connect();
-
-                InputStream is = connection.getInputStream();
-
-                reader = new BufferedReader(new InputStreamReader(is));
-                StringBuilder sb=new StringBuilder();
-                String line;
-                while((line=reader.readLine())!= null){
-                    sb.append(line);
+        protected Product doInBackground(String... strings) {
+            ByteArrayOutputStream res=null;
+            Product product = null;
+            Bitmap pic=null;
+            String out = null;
+            String productName=null;
+            int i =0;
+            InputStream is = getInputStreamFromUrl(strings[0]);
+            try {
+                res = new ByteArrayOutputStream();
+                byte[] buffer = new byte[1024];
+                int length;
+                while ((length = is.read(buffer)) != -1) {
+                    res.write(buffer, 0, length);
+                    ++i;
                 }
-                return sb.toString();
-            }catch (MalformedURLException e){
-                e.printStackTrace();
-            }catch (IOException e){
+
+                out = res.toString();
+            }catch(IOException e){
                 e.printStackTrace();
             }finally {
-                if(connection != null){
-                    connection.disconnect();
-                }
                 try{
-                    if(reader!= null){
-                        reader.close();
+                    if(res!= null){
+                        res.close();
                     }
                 }catch(IOException e){
                     e.printStackTrace();
                 }
             }
-            return null;
+            try {
+                JsonNode jsonNode = mapper.readTree(out);
+                productName = jsonNode.findValue("product_name").toString();
+                JsonNode picNode = jsonNode.findValue("selected_images").findValue("front");
+                HashMap<String,String> map = mapper.readValue(picNode.toString(), HashMap.class);
+                String picUrl;
+                if(map.containsKey("en")){
+                    picUrl = map.get("en");
+                }else{
+                    Set<String> set = map.keySet();
+                    Iterator<String> it = set.iterator();
+                    picUrl = map.get(it.next());
+                }
+                picUrl =picUrl.replace('\"',' ').trim();
+                PictureTask pictureTask = new PictureTask();
+                pictureTask.execute(picUrl);
+                if(pictureTask.getPic() == null){
+                    wait(100);
+                }
+                pic=pictureTask.getPic();
+
+                if(productName ==null ){
+                    productName = "Nista nije doslo";
+                }
+                if(pic == null ){
+                    productName = "Slika ti je nula mile";
+                }
+                //return product
+            } catch (Exception e) {
+                e.printStackTrace();
+            }finally {
+                return new Product(productName,pic);
+            }
         }
         @Override
-        protected void onPostExecute(String result){
+        protected void onPostExecute(Product result){
             super.onPostExecute(result);
             if(pd.isShowing()){
                 pd.dismiss();
             }
-            try {
-                jsonNode = mapper.readTree(result);
-                txtName = findViewById(R.id.txtName);
-                txtName.setText(jsonNode.findValue("product_name").asText());
-            } catch (JsonProcessingException e) {
-                e.printStackTrace();
-            }catch(Exception e){
-                txtName.setText(String.valueOf(result ==null));
+            txtName = findViewById(R.id.txtName);
+            productImg = findViewById(R.id.productImg);
+            if(result == null){
+                txtName.setText("Error");
+            }else {
+                txtName.setText(result.getProduct_name());
+                productImg.setImageBitmap(result.getProduct_pic());
+            }
+
+        }
+    }
+    @Override
+    public void onBackPressed() {
+
+        AlertDialog.Builder alertDialog = new AlertDialog.Builder(this);
+        alertDialog.setTitle("Warning");
+        alertDialog.setMessage("Do you want to save product in your inventory?");
+        alertDialog.setPositiveButton("Yes", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                //add saving product
+            }
+        });
+        alertDialog.setNegativeButton("No", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                startActivity(new Intent(ProductInfo.this,MainActivity.class));
+                ProductInfo.this.finish();
+            }
+        });
+        AlertDialog alertWind = alertDialog.create();
+        alertDialog.show();
+    }
+
+    private InputStream getInputStreamFromUrl(String strUrl){
+        HttpURLConnection connection=null;
+        URL url = null;
+        try{
+            url = new URL(strUrl);
+            connection = (HttpURLConnection) url.openConnection();
+            connection.addRequestProperty("User-agent","FridgeInventory");
+            connection.addRequestProperty("Android","Version: 0.1");
+            connection.addRequestProperty("FridgeInventory","https://github.com/MrCrobben/FridgeInventory");
+            connection.connect();
+
+            return connection.getInputStream();
+
+        }catch (MalformedURLException e){
+            e.printStackTrace();
+        }catch (IOException e) {
+            e.printStackTrace();
+        }finally {
+            if(connection!=null){
+                connection.disconnect();
             }
         }
+        return null;
     }
 }

@@ -1,19 +1,35 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
-xmlns:app="http://schemas.android.com/apk/res-auto"
-xmlns:tools="http://schemas.android.com/tools"
-android:layout_width="match_parent"
-android:layout_height="match_parent"
-tools:context=".ProductInfo">
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/activity_main"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+
+    android:background="@android:color/holo_blue_bright">
+
+    <ImageView
+        android:id="@+id/productImg"
+        android:layout_width="match_parent"
+        android:layout_height="273dp"
+        android:layout_alignParentTop="true"
+        android:layout_alignParentEnd="true"
+        android:layout_alignParentRight="true"
+        android:layout_marginTop="29dp"
+        android:layout_marginEnd="0dp"
+        android:layout_marginRight="0dp" />
 
     <TextView
         android:id="@+id/txtName"
-        android:layout_width="401dp"
-        android:layout_height="722dp"
-        android:layout_centerHorizontal="true"
-        app:autoSizeMaxTextSize="100sp"
+        android:layout_width="match_parent"
+        android:layout_height="296dp"
+        android:layout_alignBottom="@id/productImg"
+        android:layout_centerInParent="true"
+        android:layout_marginBottom="-494dp"
+        app:autoSizeMaxTextSize="20sp"
         app:autoSizeMinTextSize="12sp"
         app:autoSizeStepGranularity="2sp"
-        app:autoSizeTextType="uniform"
-        tools:ignore="MissingConstraints" />
-</androidx.constraintlayout.widget.ConstraintLayout>
+        app:autoSizeTextType="uniform" />
+
+
+</RelativeLayout>
