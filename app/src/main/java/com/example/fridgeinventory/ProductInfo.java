@@ -143,7 +143,7 @@ public class ProductInfo extends AppCompatActivity {
         AlertDialog.Builder alertDialog = new AlertDialog.Builder(this);
         alertDialog.setTitle("Warning");
         alertDialog.setMessage("Do you want to save product in your inventory?");
-        alertDialog.setPositiveButton("Yes", new DialogInterface.OnClickListener() {
+        alertDialog.setPositiveButton("Yes - Don't press because it is not implemented yet", new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialog, int which) {
                 //add saving product
