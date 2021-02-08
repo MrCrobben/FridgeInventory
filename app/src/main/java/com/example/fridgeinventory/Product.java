@@ -10,6 +10,8 @@ public class Product {
     public Product(String product_name, Bitmap product_pic){
         this.product_name=product_name;
         this.product_pic = product_pic;
+
+
     }
 
     public String getProduct_name(){

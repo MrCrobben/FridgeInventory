@@ -9,6 +9,7 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.widget.ImageView;
@@ -52,25 +53,6 @@ public class ProductInfo extends AppCompatActivity {
         new JsonTask().execute(uri);
 
     }
-    private class PictureTask extends AsyncTask<String, String, Bitmap>{
-        Bitmap pic =null;
-        public Bitmap getPic(){
-            return pic;
-        }
-        @Override
-        protected Bitmap doInBackground(String... strings) {
-
-            InputStream is1 = getInputStreamFromUrl(strings[0]);
-            pic = BitmapFactory.decodeStream(is1);
-            return pic;
-        }
-
-        @Override
-        protected void onPostExecute(Bitmap bitmap) {
-            super.onPostExecute(bitmap);
-            pic = bitmap;
-        }
-    }
     @SuppressLint("StaticFieldLeak")
     private class JsonTask extends AsyncTask<String, String, Product > {
         private JsonTask(){
@@ -91,8 +73,9 @@ public class ProductInfo extends AppCompatActivity {
             String out = null;
             String productName=null;
             int i =0;
-            InputStream is = getInputStreamFromUrl(strings[0]);
+
             try {
+                InputStream is = getInputStreamFromUrl(strings[0]).getInputStream();
                 res = new ByteArrayOutputStream();
                 byte[] buffer = new byte[1024];
                 int length;
@@ -100,7 +83,7 @@ public class ProductInfo extends AppCompatActivity {
                     res.write(buffer, 0, length);
                     ++i;
                 }
-
+                is.close();
                 out = res.toString();
             }catch(IOException e){
                 e.printStackTrace();
@@ -116,7 +99,7 @@ public class ProductInfo extends AppCompatActivity {
             try {
                 JsonNode jsonNode = mapper.readTree(out);
                 productName = jsonNode.findValue("product_name").toString();
-                JsonNode picNode = jsonNode.findValue("selected_images").findValue("front");
+                JsonNode picNode = jsonNode.findValue("selected_images").findValue("front").findValue("thumb");
                 HashMap<String,String> map = mapper.readValue(picNode.toString(), HashMap.class);
                 String picUrl;
                 if(map.containsKey("en")){
@@ -127,20 +110,10 @@ public class ProductInfo extends AppCompatActivity {
                     picUrl = map.get(it.next());
                 }
                 picUrl =picUrl.replace('\"',' ').trim();
-                PictureTask pictureTask = new PictureTask();
-                pictureTask.execute(picUrl);
-                if(pictureTask.getPic() == null){
-                    wait(100);
-                }
-                pic=pictureTask.getPic();
+                InputStream is1 = getInputStreamFromUrl(picUrl).getInputStream();
+                pic = BitmapFactory.decodeStream(is1);
+                is1.close();
 
-                if(productName ==null ){
-                    productName = "Nista nije doslo";
-                }
-                if(pic == null ){
-                    productName = "Slika ti je nula mile";
-                }
-                //return product
             } catch (Exception e) {
                 e.printStackTrace();
             }finally {
@@ -187,7 +160,7 @@ public class ProductInfo extends AppCompatActivity {
         alertDialog.show();
     }
 
-    private InputStream getInputStreamFromUrl(String strUrl){
+    private HttpURLConnection getInputStreamFromUrl(String strUrl){
         HttpURLConnection connection=null;
         URL url = null;
         try{
@@ -198,16 +171,12 @@ public class ProductInfo extends AppCompatActivity {
             connection.addRequestProperty("FridgeInventory","https://github.com/MrCrobben/FridgeInventory");
             connection.connect();
 
-            return connection.getInputStream();
+            return connection;
 
         }catch (MalformedURLException e){
             e.printStackTrace();
         }catch (IOException e) {
             e.printStackTrace();
-        }finally {
-            if(connection!=null){
-                connection.disconnect();
-            }
         }
         return null;
     }
